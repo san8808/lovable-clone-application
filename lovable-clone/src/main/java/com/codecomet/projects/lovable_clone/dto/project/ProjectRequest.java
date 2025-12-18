@@ -1,4 +1,10 @@
 package com.codecomet.projects.lovable_clone.dto.project;
 
-public record ProjectRequest() {
+import com.codecomet.projects.lovable_clone.dto.auth.UserProfileResponse;
+
+import java.time.Instant;
+
+public record ProjectRequest(
+        String name
+) {
 }

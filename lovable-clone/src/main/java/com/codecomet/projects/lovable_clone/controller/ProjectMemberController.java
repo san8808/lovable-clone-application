@@ -2,6 +2,7 @@ package com.codecomet.projects.lovable_clone.controller;
 
 import com.codecomet.projects.lovable_clone.dto.member.InviteMemberRequest;
 import com.codecomet.projects.lovable_clone.dto.member.MemberResponse;
+import com.codecomet.projects.lovable_clone.dto.member.UpdateMemberRoleRequest;
 import com.codecomet.projects.lovable_clone.entity.ProjectMember;
 import com.codecomet.projects.lovable_clone.service.ProjectMemberService;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class ProjectMemberController {
     @PatchMapping("/{memberId}")
     public ResponseEntity<MemberResponse> updateMemberRole(@PathVariable Long projectId,
                                                            @PathVariable Long memberId,
-                                                           @RequestBody InviteMemberRequest request){
+                                                           @RequestBody UpdateMemberRoleRequest request){
         Long userId = 1L;
 
         return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request));

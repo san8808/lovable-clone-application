@@ -1,8 +1,7 @@
 package com.codecomet.projects.lovable_clone.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +11,9 @@ import java.time.Instant;
 @Table(name = "projects")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class Project {
 
     @Id
@@ -21,8 +23,9 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany
-    private User ownerId;
+    @ManyToOne
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     @CreationTimestamp
     private Instant createdAt;
