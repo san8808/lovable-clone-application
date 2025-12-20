@@ -41,7 +41,7 @@ public class ProjectMemberController {
                                                            @RequestBody UpdateMemberRoleRequest request){
         Long userId = 1L;
 
-        return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request));
+        return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request,userId));
 
     }
 
