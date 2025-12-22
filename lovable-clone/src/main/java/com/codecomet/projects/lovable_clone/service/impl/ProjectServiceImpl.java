@@ -1,13 +1,20 @@
 package com.codecomet.projects.lovable_clone.service.impl;
 
+import ch.qos.logback.classic.spi.IThrowableProxy;
 import com.codecomet.projects.lovable_clone.dto.project.ProjectRequest;
 import com.codecomet.projects.lovable_clone.dto.project.ProjectResponse;
 import com.codecomet.projects.lovable_clone.dto.project.ProjectSummaryResponse;
 import com.codecomet.projects.lovable_clone.entity.Project;
+import com.codecomet.projects.lovable_clone.entity.ProjectMember;
+import com.codecomet.projects.lovable_clone.entity.ProjectMemberId;
 import com.codecomet.projects.lovable_clone.entity.User;
+import com.codecomet.projects.lovable_clone.entity.enums.ProjectRole;
+import com.codecomet.projects.lovable_clone.error.ResourceNotFoundException;
 import com.codecomet.projects.lovable_clone.mapper.ProjectMapper;
+import com.codecomet.projects.lovable_clone.repository.ProjectMemberRepository;
 import com.codecomet.projects.lovable_clone.repository.ProjectRepository;
 import com.codecomet.projects.lovable_clone.repository.UserRepository;
+import com.codecomet.projects.lovable_clone.security.AuthUtil;
 import com.codecomet.projects.lovable_clone.service.ProjectService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -28,10 +35,14 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectRepository projectRepository;
     UserRepository userRepository;
     ProjectMapper projectMapper;
+    ProjectMemberRepository projectMemberRepository;
+    AuthUtil authUtil;
 
 
     @Override
-    public List<ProjectSummaryResponse> getUserProjects(Long userId) {
+    public List<ProjectSummaryResponse> getUserProjects() {
+
+        Long userId = authUtil.getCurrentUserId();
 
 //        return projectRepository.findAllAccessibleByUser(userId)
 //                .stream()
@@ -42,35 +53,45 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long id,Long userId) {
+    public ProjectResponse getUserProjectById(Long id) {
+        Long userId = authUtil.getCurrentUserId();
 
         Project project = getAccessibleProject(id,userId);
         return projectMapper.toProjectResponse(project);
     }
 
     @Override
-    public ProjectResponse createProject(ProjectRequest request, Long userId) {
+    public ProjectResponse createProject(ProjectRequest request) {
+        Long userId = authUtil.getCurrentUserId();
+//        User owner = userRepository.findById(userId).orElseThrow();
 
-        User owner = userRepository.findById(userId).orElseThrow();
+        User owner = userRepository.getReferenceById(userId); // database call will not be made
 
         Project project = Project.builder()
                 .name(request.name())
-                .owner(owner)
                 .build();
 
         project = projectRepository.save(project);
 
+        ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(), userId);
+        ProjectMember projectMember = ProjectMember.builder()
+                .id(projectMemberId)
+                .projectRole(ProjectRole.OWNER)
+                .user(owner)
+                .acceptedAt(Instant.now())
+                .invitedAt(Instant.now())
+                .project(project)
+                .build();
+
+        projectMemberRepository.save(projectMember);
+
         return projectMapper.toProjectResponse(project);
     }
 
     @Override
-    public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
-
+    public ProjectResponse updateProject(Long id, ProjectRequest request) {
+        Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProject(id,userId);
-
-        if(!project.getOwner().getId().equals(userId)){
-            throw new RuntimeException("You are noe allowed to delete this project");
-        }
 
         project.setName(request.name());
         project = projectRepository.save(project);
@@ -78,19 +99,16 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void softDelete(Long id, Long userId) {
-
+    public void softDelete(Long id) {
+        Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProject(id,userId);
-
-        if(!project.getOwner().getId().equals(userId)){
-            throw new RuntimeException("You are noe allowed to delete this project");
-        }
 
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
     }
 
     public Project getAccessibleProject(Long projectId, Long userId){
-        return projectRepository.findAccessibleProjectById(projectId,userId).orElseThrow();
+        return projectRepository.findAccessibleProjectById(projectId,userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", projectId.toString()));
     }
 }

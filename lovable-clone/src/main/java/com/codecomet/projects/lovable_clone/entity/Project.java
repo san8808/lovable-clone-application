@@ -4,11 +4,17 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.stereotype.Indexed;
 
 import java.time.Instant;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "projects",
+        indexes = {
+                @Index(name = "idx_projects_updated_at_desc", columnList = "updated_at DESC, deleted_at"),
+                @Index(name = "idx_project_deleted_at", columnList =  "deleted_at")
+        }
+)
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,10 +28,6 @@ public class Project {
 
     @Column(nullable = false)
     private String name;
-
-    @ManyToOne
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
 
     @CreationTimestamp
     private Instant createdAt;
